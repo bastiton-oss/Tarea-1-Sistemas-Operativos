@@ -6,5 +6,10 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+
+void pipes(char ***comandos);
+int redirecciones(char ***comandos);
 
 #endif

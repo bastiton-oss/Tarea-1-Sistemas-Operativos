@@ -36,6 +36,15 @@ void pipes(char ***comandos){
 				close(fd[1]);
 				close(fd[0]);
 			}
+
+			if(redirecciones(comando[i]) < 0){
+				exit(1);
+			}
+
+			if(comandos[i][0] == NULL){
+				exit(0)
+			}
+			
 			execvp(comandos[i][0], comandos[i]);
 			perror("Error al ejecutar comando");
 			exit(1);
@@ -55,7 +64,7 @@ void pipes(char ***comandos){
 			i++;
 		}
 
-		else if(pid < 0){ //Edge case por si falla el fork
+		else if(pid < 0){ //edge case por si falla el fork
 			perror("Error al crear fork");
 
 			if (comandos[i+1] != NULL) {
