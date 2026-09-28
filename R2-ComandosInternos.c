@@ -1,10 +1,4 @@
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <sys/types.h>
+#include <headers.h>
 
 int comandos_internos(char **arg,int i){
   char *ruta=NULL;
