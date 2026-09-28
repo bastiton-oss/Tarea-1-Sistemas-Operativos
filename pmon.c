@@ -91,11 +91,62 @@ int pmon(int seg){
   }
   b_alarma=1;
   salir_pmon=0;
+  DatosCPU datos[MAX_JOBS];
+  for(int i=0;i<MAX_JOBS;i++){
+    datos[i].pid=0;
+    datos[i].tiempousu_a=0;
+    datos[i].tiemposis_a=0;
+    datos[i].cpu=0
+  }
   while(salir_pmon==0){
     if(b_alarma!=0){
       b_alarma=0;
       printf("\033[H\033[J");
-      //aca va lo de R5  
+      printf("PID COMANDO ESTADO %%CPU RSS\n");
+      for(int i=0;i<MAX_JOBS;i++){
+        if(tabla_jobs[i].numero==0){
+          continue;
+        }
+        if(tabla_jobs[i].pendientes==0){
+          continue;
+        }
+        char estado;
+        unsigned long tiempo_usu;
+        unsigned long tiempo_sis;
+        unsigned long memoria;
+        if(leer_stat(pid,&estado,&tiempo_usu,&tiempo_sis)!=0){
+          continue;
+        }
+        if(leer_status(pid,&memoria)!=0){
+          memoria=0;
+        }
+        double cpu=0
+        if(datos[i].pid==pid){
+          unsigned long tiempo_ant= datos[i].tiempousu_a+datos[i].tiemposis_a;
+          unsigned long tiempo_act= datos[i].tiempo_usu+datos[i].tiempo_sis;
+          unsigned long resultado=tiempo_act-tiempo_ant;
+          cpu=((double)resultado/(double)sysconf(_SC_CLK_TCK))/(double)seg*100.0;
+        }
+        datos[i].pid=pid;
+        datos[i].tiempousu_a=tiempo_usu;
+        datos[i].tiemposis_a=tiempo_sis;
+        datos[i].cpu=cpu;
+        char *estado;
+        if(estado=='R'){
+          estado="ejecutando";
+        }
+        else if(estado=='S'){
+          estado="durmiendo";
+        }
+        else if(estado=='Z'){
+          estado="zombie";
+        }
+        else{
+          estado="desconocido";
+        }
+        printf("%d %s %s %.1f %lu\n",pid,tabla_jobs[i].comando,estado,cpu,memoria);
+      }
+      fflush(stdout);
       alarm(seg);
     }    
     pause();
