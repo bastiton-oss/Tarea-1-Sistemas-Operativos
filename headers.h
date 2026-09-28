@@ -15,6 +15,8 @@
 
 void pipes(char ***comandos);
 int redirecciones(char **comandos);
+int comandos_internos(char **arg, int i);
+int pmon(int seg);
 void setup_shell_signals();
 
 #endif
