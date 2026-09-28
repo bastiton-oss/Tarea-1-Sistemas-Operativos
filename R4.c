@@ -1,11 +1,12 @@
 #include "headers.h"
 
-void pipes(char ***comandos){
+void pipes(char ***comandos, int job, const sigset_t *mascara){
 
 	//Contador de comandos
 	int i= 0;
 	pid_t pid;
 	int status;
+	pid_t hijos[MAX_PROCESOS];
 
 	//Guarda fd de salida del pipe anterior
 	int salidaAnterior= 0;
@@ -16,12 +17,20 @@ void pipes(char ***comandos){
 	while (comandos[i] != NULL){
 
 		if(comandos[i+1] != NULL){
-			pipe(fd);
+			if(pipe(fd) == -1){
+				perror("pipe");
+				exit(1);
+			}
 		}
 
 		pid= fork();
 
 		if (pid == 0){
+			if(job >= 0 && setpgid(0, tabla_jobs[job].pid) == -1){
+				perror("setpgid");
+				_exit(1);
+			}
+			sigprocmask(SIG_SETMASK, mascara, NULL);
 
 			if(salidaAnterior != 0){
 				dup2(salidaAnterior, 0);
@@ -57,6 +66,8 @@ void pipes(char ***comandos){
 		}
 
 		else if(pid > 0){
+			hijos[i]= pid;
+			if(job >= 0) agregar_proceso(job, pid);
 			if(salidaAnterior != 0){
 				close(salidaAnterior);
 			}
@@ -64,6 +75,9 @@ void pipes(char ***comandos){
 			if(comandos[i+1] != NULL){
 				close(fd[1]);
 				salidaAnterior= fd[0];
+			}
+			else{
+				salidaAnterior= 0;
 			}
 
 			i++;
@@ -89,7 +103,18 @@ void pipes(char ***comandos){
     close(salidaAnterior);
 	}
 
+	if(job >= 0){
+		anunciar_job(job);
+	}
+	sigprocmask(SIG_SETMASK, mascara, NULL);
+	if(job >= 0) return;
+
 	for (int j= 0; j < i; j++){
-		waitpid(-1, &status, 0);
+		while(waitpid(hijos[j], &status, 0) == -1){
+			if(errno == EINTR) continue;
+			// SIGCHLD puede haber recogido este hijo.
+			if(errno != ECHILD) perror("waitpid");
+			break;
+		}
 	}
 }

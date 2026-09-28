@@ -50,13 +50,7 @@ int comandos_internos(char **arg,int i){
     }
   }
   else if(strcmp(arg[0],"jobs")==0){
-    if(i==0){
-      return jobs(arg,i);
-    }
-    else{
-      printf("comando invalido");
-      return 1;
-    }
+    return jobs(arg,i);
   }
   else if(strcmp(arg[0],"pmon")==0){
     int seg=2;
@@ -92,4 +86,3 @@ int comandos_internos(char **arg,int i){
     return -1;
   }
 }
-
