@@ -1,4 +1,4 @@
-#include <signal.h>
+#include <headers.h>
 
 typedef struct {
     pid_t pid;
