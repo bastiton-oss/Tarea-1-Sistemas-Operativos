@@ -22,25 +22,26 @@ void manejar_sigint_pmon(int sig){
 
 
 int leer_stat(pid_t pid,char *estado, unsigned long *tiempo_usu, unsigned long *tiempo_sis){
-  pid_t pid_arc;
   char ruta[1000];
-  char nombre[100];
+  char linea[4000];
   snprintf(ruta,sizeof(ruta),"/proc/%d/stat",pid);
   FILE*archivo=fopen(ruta,"r");
   if(archivo==NULL){
     perror("fopen");
     return 1;
   }
-  if(fscanf(archivo,"%d %99s %c",&pid_arc,nombre,estado)!= 3){
-    fclose(archivo);
-    return 1;
-  }
-  if(fscanf(archivo,"%*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %lu %lu",
-     tiempo_usu, tiempo_sis) != 2){
+  if(fgets(linea,sizeof(linea),archivo)==NULL){
     fclose(archivo);
     return 1;
   }
   fclose(archivo);
+  char *cierre = strrchr(linea, ')');
+  if(cierre == NULL){
+    return 1;
+  }
+  if(sscanf(cierre + 2,"%c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %lu %lu",estado, tiempo_usu, tiempo_sis) != 3){
+    return 1;
+  }
   return 0;
 }
 
@@ -73,7 +74,7 @@ int leer_status(pid_t pid, unsigned long *memoria){
 
 int pmon(int seg){
   if(seg<=0){
-    fprinf(stderr,"error, debe ser positivo");
+    fprinf(stderr,"error, debe ser positivo\n");
     return 1;  
   } 
   struct sigaction alarma;
@@ -106,7 +107,7 @@ int pmon(int seg){
     if(b_alarma!=0){
       b_alarma=0;
       printf("\033[H\033[J");
-      printf("PID COMANDO ESTADO %%CPU RSS\n");
+      printf("PID COMANDO ESTADO %%CPU RSS(kb)\n");
       for(int i=0;i<MAX_JOBS;i++){
         if(tabla_jobs[i].numero==0){
           continue;
