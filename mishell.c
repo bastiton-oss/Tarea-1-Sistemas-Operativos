@@ -70,14 +70,14 @@ int main(){
             if(i==0){
                 continue;
             }
-            else if(strcmp(arg[0],"exit")==0){
-                break;
-            }
-
+            int resultado=comandos_internos(arg,i);
             if(isPipe){
                 char **comandos[64];
                 separar_comandos(arg, comandos);
                 pipes(comandos);
+            }
+            else if(resultado!=1){
+                continue;
             }
             else{
                 pid_t pid= fork();
