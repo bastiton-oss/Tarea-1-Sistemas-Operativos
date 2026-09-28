@@ -1,7 +1,5 @@
 #include "headers.h"
 
-
-
 void pipes(char ***comandos){
 
 	//Contador de comandos
@@ -37,12 +35,19 @@ void pipes(char ***comandos){
 				close(fd[0]);
 			}
 
-			if(redirecciones(comando[i]) < 0){
+			struct sigaction sa_default;
+            sa_default.sa_handler = SIG_DFL;
+            sigemptyset(&sa_default.sa_mask);
+            sa_default.sa_flags = 0;
+            sigaction(SIGINT, &sa_default, NULL);
+            sigaction(SIGQUIT, &sa_default, NULL);
+
+			if(redirecciones(comandos[i]) < 0){
 				exit(1);
 			}
 
 			if(comandos[i][0] == NULL){
-				exit(0)
+				exit(0);
 			}
 			
 			execvp(comandos[i][0], comandos[i]);

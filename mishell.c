@@ -1,10 +1,4 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <sys/wait.h>
-#include <string.h>
-#include <signal.h> 
+#include "headers.h"
 
 void setup_shell_signals() {
     struct sigaction sa;
@@ -21,6 +15,22 @@ void setup_shell_signals() {
         exit(EXIT_FAILURE);
     }
 }
+
+void separar_comandos(char **arg, char **comandos[]){
+    int cmd_idx= 0;
+    comandos[cmd_idx++]= &arg[0];
+
+    for(int i= 0; arg[i] != NULL; i++){
+        if(strcmp(arg[i], "|") == 0){
+            arg[i]= NULL;
+            comandos[cmd_idx++]= &arg[i+1];
+        }
+    }
+    comandos[cmd_idx++]= NULL;
+}
+
+
+
 
 int main(){
     char cwd[1024];
@@ -44,10 +54,17 @@ int main(){
         else{
             char *token =strtok(line," \n"); 
             int i=0;
+            bool isPipe= false;
+
+
             while(token!=NULL){
+                if(strcmp(token, "|") == 0)
+                {
+                    isPipe= true;
+                }
                 arg[i]=token;
                 i+=1;
-                token= strtok(NULL," \n"); 
+                token= strtok(NULL," \n");
             }
             arg[i]=NULL;
             if(i==0){
@@ -56,26 +73,41 @@ int main(){
             else if(strcmp(arg[0],"exit")==0){
                 break;
             }
-            
-            pid_t pid= fork();
-            if(pid==-1){
-                printf("fork");
-                break;
-            }
-            else if(pid==0){
-                struct sigaction sa_default;
-                sa_default.sa_handler = SIG_DFL;
-                sigemptyset(&sa_default.sa_mask);
-                sa_default.sa_flags = 0;
-                sigaction(SIGINT, &sa_default, NULL);
-                sigaction(SIGQUIT, &sa_default, NULL);
 
-                execvp(arg[0],arg);
-                perror("execvp");
-                _exit(127);
+            if(isPipe){
+                char **comandos[64];
+                separar_comandos(arg, comandos);
+                pipes(comandos);
             }
             else{
-                waitpid(pid, NULL, 0);
+                pid_t pid= fork();
+                if(pid==-1){
+                    printf("fork");
+                    break;
+                }
+                else if(pid==0){
+                    struct sigaction sa_default;
+                    sa_default.sa_handler = SIG_DFL;
+                    sigemptyset(&sa_default.sa_mask);
+                    sa_default.sa_flags = 0;
+                    sigaction(SIGINT, &sa_default, NULL);
+                    sigaction(SIGQUIT, &sa_default, NULL);
+
+                    if(redirecciones(arg) < 0){
+                        exit(1);
+                    }
+
+                    if(arg[0] == NULL){
+                        exit(0);
+                    }
+
+                    execvp(arg[0],arg);
+                    perror("execvp");
+                    _exit(127);
+                }
+                else{
+                    waitpid(pid, NULL, 0);
+                }
             }
         }
     }
