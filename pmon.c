@@ -22,7 +22,7 @@ void manejar_sigint_pmon(int sig){
 
 
 int leer_stat(pid_t pid,char *estado, unsigned long *tiempo_usu, unsigned long *tiempo_sis){
-  int pid_arc;
+  pid_t pid_arc;
   char ruta[1000];
   char nombre[100];
   snprintf(ruta,sizeof(ruta),"/proc/%d/stat",pid);
@@ -72,6 +72,10 @@ int leer_status(pid_t pid, unsigned long *memoria){
 }
 
 int pmon(int seg){
+  if(seg<=0){
+    fprinf(stderr,"error, debe ser positivo");
+    return 1;  
+  } 
   struct sigaction alarma;
   struct sigaction sigint;
   struct sigaction ant;
@@ -96,7 +100,7 @@ int pmon(int seg){
     datos[i].pid=0;
     datos[i].tiempousu_a=0;
     datos[i].tiemposis_a=0;
-    datos[i].cpu=0
+    datos[i].cpu=0;
   }
   while(salir_pmon==0){
     if(b_alarma!=0){
@@ -110,6 +114,7 @@ int pmon(int seg){
         if(tabla_jobs[i].pendientes==0){
           continue;
         }
+        pid_t pid=tabla_jobs[i].pid;
         char estado;
         unsigned long tiempo_usu;
         unsigned long tiempo_sis;
@@ -120,10 +125,10 @@ int pmon(int seg){
         if(leer_status(pid,&memoria)!=0){
           memoria=0;
         }
-        double cpu=0
+        double cpu=0;
         if(datos[i].pid==pid){
           unsigned long tiempo_ant= datos[i].tiempousu_a+datos[i].tiemposis_a;
-          unsigned long tiempo_act= datos[i].tiempo_usu+datos[i].tiempo_sis;
+          unsigned long tiempo_act= tiempo_usu+tiempo_sis;
           unsigned long resultado=tiempo_act-tiempo_ant;
           cpu=((double)resultado/(double)sysconf(_SC_CLK_TCK))/(double)seg*100.0;
         }
@@ -131,25 +136,30 @@ int pmon(int seg){
         datos[i].tiempousu_a=tiempo_usu;
         datos[i].tiemposis_a=tiempo_sis;
         datos[i].cpu=cpu;
-        char *estado;
+        char *estado_txt;
         if(estado=='R'){
-          estado="ejecutando";
+          estado_txt="ejecutando";
         }
         else if(estado=='S'){
-          estado="durmiendo";
+          estado_txt="durmiendo";
         }
         else if(estado=='Z'){
-          estado="zombie";
+          estado_txt="zombie";
+        }
+        else if(estado=='T'){
+          estado_txt="detenido";
         }
         else{
-          estado="desconocido";
+          estado_txt="desconocido";
         }
-        printf("%d %s %s %.1f %lu\n",pid,tabla_jobs[i].comando,estado,cpu,memoria);
+        printf("%d %s %s %.1f %lu\n",(int)pid,tabla_jobs[i].comando,estado_txt,cpu,memoria);
       }
       fflush(stdout);
       alarm(seg);
     }    
-    pause();
+    if(salir_pmon==0){
+      pause();
+    }
   }
   alarm(0);
   if(sigaction(SIGINT,&ant,NULL)== -1){
