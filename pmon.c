@@ -74,7 +74,7 @@ int leer_status(pid_t pid, unsigned long *memoria){
 
 int pmon(int seg){
   if(seg<=0){
-    fprinf(stderr,"error, debe ser positivo\n");
+    fprintf(stderr,"error, debe ser positivo\n");
     return 1;  
   } 
   struct sigaction alarma;
