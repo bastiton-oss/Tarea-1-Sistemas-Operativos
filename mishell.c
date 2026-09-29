@@ -140,13 +140,14 @@ int main(){
                         _exit(1);
                     }
                     sigprocmask(SIG_SETMASK, &anterior, NULL);
-                    struct sigaction sa_default;
-                    sa_default.sa_handler = SIG_DFL;
-                    sigemptyset(&sa_default.sa_mask);
-                    sa_default.sa_flags = 0;
-                    sigaction(SIGINT, &sa_default, NULL);
-                    sigaction(SIGQUIT, &sa_default, NULL);
-
+                    if(!background){
+                        struct sigaction sa_default;
+                        sa_default.sa_handler = SIG_DFL;
+                        sigemptyset(&sa_default.sa_mask);
+                        sa_default.sa_flags = 0;
+                        sigaction(SIGINT, &sa_default, NULL);
+                        sigaction(SIGQUIT, &sa_default, NULL);
+                    }
                     if(redirecciones(arg) < 0){
                         exit(1);
                     }
