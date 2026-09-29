@@ -44,13 +44,14 @@ void pipes(char ***comandos, int job, const sigset_t *mascara){
 				close(fd[0]);
 			}
 
-			struct sigaction sa_default;
-            sa_default.sa_handler = SIG_DFL;
-            sigemptyset(&sa_default.sa_mask);
-            sa_default.sa_flags = 0;
-            sigaction(SIGINT, &sa_default, NULL);
-            sigaction(SIGQUIT, &sa_default, NULL);
-
+			if (job < 0) {
+                struct sigaction sa_default;
+                sa_default.sa_handler = SIG_DFL;
+                sigemptyset(&sa_default.sa_mask);
+                sa_default.sa_flags = 0;
+                sigaction(SIGINT, &sa_default, NULL);
+                sigaction(SIGQUIT, &sa_default, NULL);
+            }
 			if(redirecciones(comandos[i]) < 0){
 				exit(1);
 			}
